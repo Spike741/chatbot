@@ -3,7 +3,7 @@ import os
 from groq import Groq
 
 # Your Groq API key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Or paste your key here for testing
+GROQ_API_KEY = os.getenv("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")  # Or paste your key here for testing
 
 # Define your groq_chat function
 def groq_chat(context, question, model="llama3-8b-8192"):
