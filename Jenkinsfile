@@ -72,7 +72,21 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to EC2') {
+    steps {
+        sshagent (credentials: ['ec2-ssh-key']) {
+            bat """
+            ssh -o StrictHostKeyChecking=no ubuntu@YOUR_EC2_ELASTIC_IP ^
+                "aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY} && ^
+                docker pull ${env.IMAGE_URI} && ^
+                docker stop testwebsite-app || true && ^
+                docker rm testwebsite-app || true && ^
+                docker run -d --restart unless-stopped --name testwebsite-app -p 8501:8501 ${env.IMAGE_URI}"
+            """
+        }
     }
+}
+}
 
     post {
         success {
