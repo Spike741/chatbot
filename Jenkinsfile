@@ -18,15 +18,15 @@ pipeline {
             }
         }
 
-        stage('Build and Test Python App') {
-            steps {
-                bat 'python --version'
-                bat 'pip install --upgrade pip'
-                bat 'pip install -r requirements.txt'
+       // stage('Build and Test Python App') {
+         //   steps {
+           //     bat 'python --version'
+             //   bat 'pip install --upgrade pip'
+               // bat 'pip install -r requirements.txt'
                 // Optional: Add Python linting or unit tests here
                 // bat 'pytest'  // if you have tests
-            }
-        }
+           // }
+      //  }
 
         stage('Configure AWS Credentials') {
             steps {
