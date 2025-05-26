@@ -18,16 +18,6 @@ pipeline {
             }
         }
 
-       // stage('Build and Test Python App') {
-         //   steps {
-           //     bat 'python --version'
-             //   bat 'pip install --upgrade pip'
-               // bat 'pip install -r requirements.txt'
-                // Optional: Add Python linting or unit tests here
-                // bat 'pytest'  // if you have tests
-           // }
-      //  }
-
         stage('Configure AWS Credentials') {
             steps {
                 withCredentials([[
@@ -49,7 +39,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def dockerImage = docker.build("${env.IMAGE_URI}")
+                    docker.build("${env.IMAGE_URI}")
                 }
             }
         }
@@ -63,37 +53,35 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     script {
-                        bat """
-                        aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
-                        """
-                        def dockerImage = docker.image("${env.IMAGE_URI}")
-                        dockerImage.push()
+                        bat "aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}"
+                        docker.image("${env.IMAGE_URI}").push()
                     }
                 }
             }
         }
+
         stage('Deploy to EC2') {
-    steps {
-        sshagent (credentials: ['ec2-ssh-key']) {
-            bat """
-            ssh -o StrictHostKeyChecking=no ubuntu@YOUR_EC2_ELASTIC_IP ^
-                "aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY} && ^
-                docker pull ${env.IMAGE_URI} && ^
-                docker stop testwebsite-app || true && ^
-                docker rm testwebsite-app || true && ^
-                docker run -d --restart unless-stopped --name testwebsite-app -p 8501:8501 ${env.IMAGE_URI}"
-            """
+            steps {
+                sshagent (credentials: ['ec2-ssh-key']) {
+                    bat """
+                    ssh -o StrictHostKeyChecking=no ubuntu@YOUR_EC2_ELASTIC_IP "docker system prune -af && \
+                    aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY} && \
+                    docker pull ${env.IMAGE_URI} && \
+                    docker stop testwebsite-app || true && \
+                    docker rm testwebsite-app || true && \
+                    docker run -d --restart unless-stopped --name testwebsite-app -p 8501:8501 ${env.IMAGE_URI}"
+                    """
+                }
+            }
         }
     }
-}
-}
 
     post {
         success {
-            echo 'Pipeline completed successfully! Docker image pushed to ECR.'
+            echo '✅ Pipeline completed successfully! Docker image pushed to ECR and deployed to EC2.'
         }
         failure {
-            echo 'Pipeline failed! Check the logs for errors.'
+            echo '❌ Pipeline failed! Check the logs for errors.'
         }
     }
 }
