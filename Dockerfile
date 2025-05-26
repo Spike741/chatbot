@@ -1,27 +1,30 @@
-# Use official Python image
+# Use the official Python base image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set work directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements.txt if you have one, or create it below
+# If you don't have a requirements.txt, create one with the necessary packages:
+# streamlit
+# groq
+
+# Create requirements.txt
+RUN echo "streamlit\ngroq\n" > requirements.txt
 
 # Install Python dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Copy your application code into the container
 COPY stream.py .
 
-# Expose Streamlit default port
+# Expose the Streamlit default port
 EXPOSE 8501
 
-# Run the Streamlit app
-CMD ["streamlit", "run", "stream.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Set environment variable for Streamlit to allow access from outside the container
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_SERVER_PORT=8501
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+
+# Command to run the Streamlit app
+CMD ["streamlit", "run", "stream.py"]
